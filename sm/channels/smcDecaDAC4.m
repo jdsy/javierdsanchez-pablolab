@@ -1,6 +1,21 @@
 function val = smcDecaDAC4(ic, val, rate)
 % With ramp support and new trigger scheme. Odd channels are ramped.
 % Improved error treatment compared to smcdecaDAC3.m
+%% Note on Buffer flushing 3/11/2011 JDSY
+%       can get unpredictable results if buffer is filled when reading
+%       I think it would be better to always check for bytes available and
+%       flush before query.  
+% Change 3/11/2011 -> changed dacread function to always empty buffer
+% before reading if anything is stored there.
+%% Bug with ramping 3/11/2011 JDSY
+%       Ramping sets and Upper and Lower Limit (U L) and a ramp rate (S)
+%       Once a ramp is run, trying to set the value of the DAC using the
+%       'D#####;' command will just rerun the ramp
+%       The ramp can be stopped by sending the 'S0;' command
+%       This does not get rid of the limits though and you will not be able
+%       to set the DAC beyond the limits.  
+%       --> Suggested fix.  Always reset limits in beginning to match range
+%       
 global smdata;
 
 
@@ -26,21 +41,24 @@ if smdata.inst(ic(1)).channels(ic(2), 1) == 'S'
     return;
 end
 
+%% Slot and Channel number
+sloti = floor((ic(2)-1)/8);
+chani = floor(mod(ic(2)-1, 8)/2);
 
 rng = smdata.inst(ic(1)).data.rng(floor((ic(2)-1)/2)+1, :);
-
-
+%Reset any ramps
+resetRamp(smdata.inst(ic(1)).data.inst,sloti,chani);
 switch ic(3)
     case 1
 
+        %convert value to 0-65535 range
         val = round((val - rng(1))/ diff(rng) * 65535);
         val = max(min(val, 65535), 0);
                 
         if mod(ic(2)-1, 2) % ramp
             rate2 = int32(abs(rate / diff(rng)) * 2^32 * 1e-6 * smdata.inst(ic(1)).data.update(floor((ic(2)+1)/2)));
                 
-            curr = dacread(smdata.inst(ic(1)).data.inst, ...
-                sprintf('B%1d;C%1d;d;', floor((ic(2)-1)/8), floor(mod(ic(2)-1, 8)/2)), '%*7c%d');
+            curr = dacread(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;d;', sloti, chani), '%*7c%d');
 
             if curr < val
                 if rate > 0
@@ -57,28 +75,35 @@ switch ic(3)
                         smdata.inst(ic(1)).data.trigmode, val, -rate2));
                 end
             end
-            val = abs(val-curr) * 2^16 * 1e-6 * smdata.inst(ic(1)).data.update(floor((ic(2)+1)/2)) / double(rate2); 
+            val = abs(val-curr) * 2^16 * 1e-6 * smdata.inst(ic(1)).data.update(floor((ic(2)+1)/2)) / double(rate2);
             
         else
-            dacwrite(smdata.inst(ic(1)).data.inst, ...
-                    sprintf('B%1d;C%1d;D%05d;', floor((ic(2)-1)/8), floor(mod(ic(2)-1, 8)/2), val));
+            dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;D%05d;', sloti, chani, val));
             val = 0;
         end
 
 
     case 0      
         val = dacread(smdata.inst(ic(1)).data.inst, ...
-            sprintf('B%1d;C%1d;d;', floor((ic(2)-1)/8), floor(mod(ic(2)-1, 8)/2)), '%*7c%d');
+            sprintf('B%1d;C%1d;d;', sloti, chani), '%*7c%d');
         val = val*diff(rng)/65535 + rng(1);
         
     case 3        
-        dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;G0;', floor((ic(2)-1)/8), floor(mod(ic(2)-1, 8)/2)));
+        dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;G0;', sloti, chani));
         
     otherwise
         error('Operation not supported');
 
 end
-        
+end
+ 
+function resetRamp(inst,slot,chan)
+    %% Reset ramp and range limits for DAC jdsy 3/11/2011
+    dacwrite(inst, sprintf('B%1d;C%1d;S0;', slot,chan)); 
+    dacwrite(inst, sprintf('B%1d;C%1d;U65535;', slot,chan));
+    dacwrite(inst, sprintf('B%1d;C%1d;L0;', slot,chan));
+end
+
 function dacwrite(inst, str)
 try
     query(inst, str);
@@ -87,6 +112,7 @@ catch
     while inst.BytesAvailable > 0
         fprintf(fscanf(inst));
     end
+end
 end
 
 function val = dacread(inst, str, format)
@@ -97,6 +123,12 @@ end
 i = 1;
 while i < 10
     try
+        %Flush buffer if necessary before reading.  Otherwise we will read
+        %an outdated response.
+        while inst.BytesAvailable > 0
+            fprintf(fscanf(inst))
+        end
+        
         val = query(inst, str, '%s\n', format);
         i = 10;
     catch
@@ -110,4 +142,5 @@ while i < 10
             error('Failed 10 times reading from DAC')
         end
     end
+end
 end
