@@ -396,9 +396,10 @@ function scan = UpdateConstants(scan)
     if nargin==0
         scan = smscan;
     end
-    
-    
-    allchans = {scan.consts.setchan};
+    allchans = {};
+    if isfield(scan.consts,'setchan')
+        allchans = {scan.consts.setchan};
+    end
     setchans = {};
     setvals = [];
     for i=1:length(scan.consts)
