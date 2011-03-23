@@ -469,7 +469,10 @@ end
 %Callback for update constants pushbutton
 function UpdateConstants(varargin)
     global smaux smscan;
-    allchans = {smscan.consts.setchan};
+    allchans = {};
+    if isfield(smscan.consts,'setchan')
+        allchans = {smscan.consts.setchan};
+    end
     setchans = {};
     setvals = [];
     for i=1:length(smscan.consts)
