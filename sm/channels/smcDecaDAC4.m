@@ -1,6 +1,8 @@
 function val = smcDecaDAC4(ic, val, rate)
 % With ramp support and new trigger scheme. Odd channels are ramped.
 % Improved error treatment compared to smcdecaDAC3.m
+%% Added 'M2;' command to queries to see if it helps with inconsistentices
+%% in DAC operation 3/28/2011 JDSY
 %% Note on Buffer flushing 3/11/2011 JDSY
 %       can get unpredictable results if buffer is filled when reading
 %       I think it would be better to always check for bytes available and
@@ -16,6 +18,11 @@ function val = smcDecaDAC4(ic, val, rate)
 %       to set the DAC beyond the limits.  
 %       --> Suggested fix.  Always reset limits in beginning to match range
 %       
+%% Ex of another bug 3/28/2011
+%was reading and writing fine from Chan A0
+%now i switch to Chan A1 and cannot write or read.   when i read it thinks
+%it is at the correct value, but is not ouputing correct voltage on
+%voltmeter.
 global smdata;
 
 
@@ -47,7 +54,7 @@ chani = floor(mod(ic(2)-1, 8)/2);
 
 rng = smdata.inst(ic(1)).data.rng(floor((ic(2)-1)/2)+1, :);
 %Reset any ramps
-resetRamp(smdata.inst(ic(1)).data.inst,sloti,chani);
+%resetRamp(smdata.inst(ic(1)).data.inst,sloti,chani);
 switch ic(3)
     case 1
 
@@ -58,7 +65,7 @@ switch ic(3)
         if mod(ic(2)-1, 2) % ramp
             rate2 = int32(abs(rate / diff(rng)) * 2^32 * 1e-6 * smdata.inst(ic(1)).data.update(floor((ic(2)+1)/2)));
                 
-            curr = dacread(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;d;', sloti, chani), '%*7c%d');
+            curr = dacread(smdata.inst(ic(1)).data.inst, sprintf('B%1d;M2;C%1d;d;', sloti, chani), '%*7c%d');
 
             if curr < val
                 if rate > 0
@@ -78,18 +85,18 @@ switch ic(3)
             val = abs(val-curr) * 2^16 * 1e-6 * smdata.inst(ic(1)).data.update(floor((ic(2)+1)/2)) / double(rate2);
             
         else
-            dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;D%05d;', sloti, chani, val));
+            dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;M2;C%1d;D%05d;', sloti, chani, val));
             val = 0;
         end
 
 
     case 0      
         val = dacread(smdata.inst(ic(1)).data.inst, ...
-            sprintf('B%1d;C%1d;d;', sloti, chani), '%*7c%d');
+            sprintf('B%1d;M2;C%1d;d;', sloti, chani), '%*10c%d');
         val = val*diff(rng)/65535 + rng(1);
         
     case 3        
-        dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;C%1d;G0;', sloti, chani));
+        dacwrite(smdata.inst(ic(1)).data.inst, sprintf('B%1d;M2;C%1d;G0;', sloti, chani));
         
     otherwise
         error('Operation not supported');
@@ -99,9 +106,9 @@ end
  
 function resetRamp(inst,slot,chan)
     %% Reset ramp and range limits for DAC jdsy 3/11/2011
-    dacwrite(inst, sprintf('B%1d;C%1d;S0;', slot,chan)); 
-    dacwrite(inst, sprintf('B%1d;C%1d;U65535;', slot,chan));
-    dacwrite(inst, sprintf('B%1d;C%1d;L0;', slot,chan));
+    dacwrite(inst, sprintf('B%1d;M2;C%1d;S0;', slot,chan)); 
+    dacwrite(inst, sprintf('B%1d;M2;C%1d;U65535;', slot,chan));
+    dacwrite(inst, sprintf('B%1d;M2;C%1d;L0;', slot,chan));
 end
 
 function dacwrite(inst, str)
@@ -126,7 +133,7 @@ while i < 10
         %Flush buffer if necessary before reading.  Otherwise we will read
         %an outdated response.
         while inst.BytesAvailable > 0
-            fprintf(fscanf(inst))
+            fscanf(inst)
         end
         
         val = query(inst, str, '%s\n', format);
@@ -134,7 +141,7 @@ while i < 10
     catch
         fprintf('WARNING: error in DAC communication. Flushing buffer and repeating.\n');
         while inst.BytesAvailable > 0
-            fprintf(fscanf(inst))
+            fscanf(inst)
         end
 
         i = i+1;
