@@ -65,7 +65,7 @@ switch ic(3)
         if mod(ic(2)-1, 2) % ramp
             rate2 = int32(abs(rate / diff(rng)) * 2^32 * 1e-6 * smdata.inst(ic(1)).data.update(floor((ic(2)+1)/2)));
                 
-            curr = dacread(smdata.inst(ic(1)).data.inst, sprintf('B%1d;M2;C%1d;d;', sloti, chani), '%*7c%d');
+            curr = dacread(smdata.inst(ic(1)).data.inst, sprintf('B%1d;M2;C%1d;d;', sloti, chani), '%*10c%d');
 
             if curr < val
                 if rate > 0
@@ -117,7 +117,7 @@ try
 catch
     fprintf('WARNING: error in DAC communication. Flushing buffer.\n');
     while inst.BytesAvailable > 0
-        fprintf(fscanf(inst));
+        fprintf(fscanf(inst));pause(0.3)
     end
 end
 end
@@ -133,7 +133,7 @@ while i < 10
         %Flush buffer if necessary before reading.  Otherwise we will read
         %an outdated response.
         while inst.BytesAvailable > 0
-            fscanf(inst)
+            fscanf(inst);pause(0.3)
         end
         
         val = query(inst, str, '%s\n', format);
@@ -146,7 +146,7 @@ while i < 10
 
         i = i+1;
         if i == 10
-            error('Failed 10 times reading from DAC')
+            error('Failed 10 times reading from DAC');pause(0.3)
         end
     end
 end
