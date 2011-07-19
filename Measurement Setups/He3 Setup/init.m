@@ -9,6 +9,7 @@ if 1==1
     global smscan;
     % load('Z:\group\measurements\leonardo\Bi_layer_device\BN_01_11_11_BN14\He3_measurements\pn1\ScansDC\Buffer_Rack.mat');  %rack v5 has corrections to DAC
     load('Y:\group\measurements\leonardo\Bi_layer_device\BN_02_23A\MatLab_scans\Rack_Leonardo_2011_04_27.mat');  %rack v5 has corrections to DAC
+    load('C:\Special_Measure_2011\Measurement Setups\He3 Setup\He3Rackv5.mat');
 
 end
 instrreset;
@@ -81,5 +82,5 @@ if 1==0
     fprintf(smdata.inst(MagContind).data.inst,'RATE 0 0.02');   % rate 4.6mT/s
     fprintf(smdata.inst(MagContind).data.inst,'PSHTR ON');
 end
-cd('Y:\group\measurements\leonardo\Bi_layer_device\BN_02_23A\Bi_Layer_2_3');
+%cd('Y:\group\measurements\leonardo\Bi_layer_device\BN_02_23A\Bi_Layer_2_3');
 smgui;
