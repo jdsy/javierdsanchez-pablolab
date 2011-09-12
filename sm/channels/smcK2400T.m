@@ -12,7 +12,7 @@ strchan = smdata.inst(ic(1)).channels(ic(2));
         case 0 %just read voltage for now
             %'case 0'
             KO = query(smdata.inst(ic(1)).data.inst, 'READ?', '%s\n', '%f,%f,%f,%f,%f');
-            V = KO(1);
+            V = abs(KO(1));
             val = Tsensor(V);
 
         case 1 %write operation;  %support only voltage write now
