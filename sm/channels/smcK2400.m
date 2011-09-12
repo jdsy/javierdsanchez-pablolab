@@ -4,9 +4,8 @@ function val = smcK2400(ic, val, rate)
     %Last update: Hadar 10-13-2010
 
     global smdata;
-
     strchan = smdata.inst(ic(1)).channels(ic(2),:);
-    if strchan == 'VSTEP'
+    if strchan == 'V'
 
         switch ic(3); %Operation: 0 for read, 1 for write
 
@@ -24,7 +23,7 @@ function val = smcK2400(ic, val, rate)
                 error('Operation not supported');
         end
     else
-        if strchan == 'ISTEP'
+        if strchan == 'I'
             switch ic(3); %Operation: 0 for read, 1 for write
 
             case 0 %just read voltage for now

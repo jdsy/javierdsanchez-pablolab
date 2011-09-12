@@ -306,7 +306,7 @@ global smaux smscan;
         smscan.loops(i).trafofn(j)=[];
     end
     if isfield(smscan.loops(i),'setchanranges')&&(length(smscan.loops(i).setchanranges)>=j)
-        smscan.loops(i).setchanranges(j)=[];
+        smscan.loops(i).setchanranges(j)=[]; 
     end
     makelooppanels;
 end
@@ -972,7 +972,7 @@ function makeloopchannelset(i,j)
         'Callback',{@loopcvars_eth_Callback,i,j,1});
 
     if isfield(smscan.loops(i), 'setchanranges')
-        if ~isempty(smscan.loops(i).setchanranges)  %% JDSY 06-01-2011 added check that the thing is not empty
+        if iscell(smscan.loops(i).setchanranges)
             %minimum
             smaux.smgui.loopcvars_sth(i,j,2) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
                 'Style','text',...
@@ -1027,7 +1027,7 @@ function makeloopchannelset(i,j)
                 'String',(smscan.loops(i).setchanranges{j}(2)-smscan.loops(i).setchanranges{j}(1))/(smscan.loops(i).npoints-1),...
                 'HorizontalAlignment','center',...
                 'Callback',{@loopcvars_eth_Callback,i,j,6});       
-
+        
             for k=2:6
                 set(smaux.smgui.loopcvars_sth(i,j,k),'Position',pos+[s*k-45+60 -5 w(k) h(k)]);
                 set(smaux.smgui.loopcvars_eth(i,j,k),'Position',pos+[s*k+60 0 w(k) h(k)]);            
