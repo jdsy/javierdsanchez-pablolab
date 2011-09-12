@@ -7,9 +7,14 @@ if 1==1
     clear all;
     global smdata; 
     global smscan;
-    % load('Z:\group\measurements\leonardo\Bi_layer_device\BN_01_11_11_BN14\He3_measurements\pn1\ScansDC\Buffer_Rack.mat');  %rack v5 has corrections to DAC
-    load('Y:\group\measurements\leonardo\Bi_layer_device\BN_02_23A\MatLab_scans\Rack_Leonardo_2011_04_27.mat');  %rack v5 has corrections to DAC
-    load('C:\Special_Measure_2011\Measurement Setups\He3 Setup\He3Rackv5.mat');
+    %load('Z:\group\measurements\leonardo\Bi_layer_device\BN_01_11_11_BN14\He3_measurements\pn1\ScansDC\Buffer_Rack.mat');  %rack v5 has corrections to DAC
+    %load('Y:\group\measurements\leonardo\Bi_layer_device\TriLayer_BN_02_23A\MatLab_scans\Rack_Leonardo_2011_04_27.mat');  %rack v5 has corrections to DAC
+    load('Y:\group\measurements\leonardo\Trilayer\trilayer_ABC_BN_02_23A\Measurements\Tri_Layer_2_3_Aug_2011\rack\MegaSweep_Rack_v2.mat')
+
+
+    
+    
+    %load('C:\Special_Measure_2011\Measurement Setups\He3 Setup\He3Rackv5.mat');
 
 end
 instrreset;
@@ -63,7 +68,9 @@ if 1==1
     fprintf(smdata.inst(k2400ind).data.inst,'*RST');
     fprintf(smdata.inst(k2400ind).data.inst,':sour:func volt');
     fprintf(smdata.inst(k2400ind).data.inst,':outp on');
-    fprintf(smdata.inst(k2400ind).data.inst,':sens:curr:prot 1e-6');
+    fprintf(smdata.inst(k2400ind).data.inst,':sens:curr:prot 0.1e-6');
+    fprintf(smdata.inst(k2400ind).data.inst,':sour:volt:rang 200');
+
 end
 
 if 1==0
@@ -84,3 +91,4 @@ if 1==0
 end
 %cd('Y:\group\measurements\leonardo\Bi_layer_device\BN_02_23A\Bi_Layer_2_3');
 smgui;
+cd('Y:\group\measurements\leonardo\Trilayer\trilayer_ABC_BN_02_23A\Measurements\Tri_Layer_2_3_Aug_2011\all measurements');
