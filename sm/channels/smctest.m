@@ -11,7 +11,7 @@ switch ic(3)
             %fprintf('%d %f\n',ic(:, 2), val);
         end
     case 0
-        val = smdata.inst(ic(1)).data.val(ic(:, 2));
+           val = smdata.inst(ic(1)).data.val(ic(:, 2));
     otherwise
         error('Operation not supported');
 end
