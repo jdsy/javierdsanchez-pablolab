@@ -76,6 +76,11 @@ end
     
 setchan = find(~isfinite(rangeramp(:, 3)));
 
+%Do setchannels first
+for k = setchan'    
+    smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 1], vals2(k));
+end
+
 % get current val for step channels
 for k = stepchan'
     curr(k)= smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 0]);
@@ -86,9 +91,7 @@ for k = rampchan'
     ramptime(k) = smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 1], vals2(k), rangeramp(k, 3));
 end
 
-for k = setchan'    
-    smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 1], vals2(k));
-end
+
 
 tramp = now;
 
