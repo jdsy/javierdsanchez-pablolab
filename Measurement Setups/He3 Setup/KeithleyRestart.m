@@ -1,0 +1,10 @@
+global smdata;
+k2400ind = 3;
+k2400adr = 14;
+fclose(smdata.inst(k2400ind).data.inst);
+smdata.inst(k2400ind).data.inst = gpib('ni', 0, k2400adr);
+fopen(smdata.inst(k2400ind).data.inst);
+fprintf(smdata.inst(k2400ind).data.inst,'*RST');
+fprintf(smdata.inst(k2400ind).data.inst,':sour:func volt');
+fprintf(smdata.inst(k2400ind).data.inst,':outp on');
+fprintf(smdata.inst(k2400ind).data.inst,':sens:curr:prot 1e-6');
