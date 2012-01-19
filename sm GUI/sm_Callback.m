@@ -346,11 +346,11 @@ function Run
         else
             %filename for this run
             runstring=sprintf('%03u',smaux.run);
-            datasaveFile = fullfile(smaux.datadir,[scan.name '_' runstring '.mat']);
+            datasaveFile = fullfile(smaux.datadir,[runstring  '_' scan.name '.mat']);
             while exist(datasaveFile,'file')
                 smaux.run=smaux.run+1;
                 runstring=sprintf('%03u',smaux.run);
-                datasaveFile = fullfile(smaux.datadir,[scan.name '_' runstring '.mat']);
+                datasaveFile = fullfile(smaux.datadir,[runstring  '_' scan.name '.mat']);
             end
             
             scan = UpdateConstants(scan);
@@ -358,7 +358,7 @@ function Run
             
             %save to powerpoint
             if get(smaux.sm.pptauto_cbh,'Value')
-                slide.title = [scan.name '_' runstring '.mat'];
+                slide.title = [runstring  '_' scan.name '.mat'];
                 slide.body = strvcat(smaux.comments,scan.comments);
                 slide.consts=scan.consts;
                 if isfield(scan,'priority') && scan.priority && isfield(smaux,'pptsavefile2')
@@ -367,7 +367,7 @@ function Run
                     smsaveppt(smaux.pptsavefile,slide,'-f1000');
                 end
             end
-            
+            smaux.run=smaux.run+1; %increment run number;
             UpdateToGUI;
         end
     end
