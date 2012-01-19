@@ -1,0 +1,33 @@
+6/14/2010
+JDSY -> need to add functions for changing from voltage bias to current bias for K2700
+
+using Special Measure with Helium System.  
+
+1. Open He4_init.m
+2. This m file will declare smdata and smscan and then load smdata_He4. 
+	Next it will:
+	-load smdata_He4 which stores the data for the rack and connecting to teh instruments
+	-connect to the instruments
+	-setup the K2700 for either voltage sourcing (for BG ramps) or current source for T measurements
+	-load scan BG.mat, basic Back gate ramping with K2700.
+	-run smgui
+
+
+When smgui starts it should be setup and ready for running a BG sweep.
+Click on the "Scan" tab.  
+BGV is the backgate voltage set by the K2700.  Min is the starting value, Max is the end value.  Most useful thing to do here is set the # of Points and the step time.
+
+under "Record" set the values you want to measure.  Typically LockinX for your voltage measurement and BGI for measuring Backgate leakage current.
+
+Choose a datafile for your measurement and a presentation.. and then give it a go!
+
+
+
+***For ramping BG manually (inbetween scans)
+use smset, BUT MAKE SURE TO SET RAMP RATE OR ELSE IT WILL INSTANTLY GO TO VALUE!
+smset('channelname',value,ramprate)
+
+Ex: to ramp to zero:
+
+smset('BGV',0,0)
+

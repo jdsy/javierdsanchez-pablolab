@@ -48,6 +48,12 @@ function data = smrun(scan, filename)
 %           routing data between channels. Basically, any procfn can access any data read and any
 %           previously recorded data. Further documentation will be provided when needed...
 %   trigfn: executed only after programming ramps for autochannels.
+%   escapefn: struc with escapefn.fn and escapefn.args
+%           escapefn.fn stores a function handle Ex: @smset
+%           escapefn.args stores arguements Ex: {'BGV'  [0]}
+
+% Space bar - pauses operation
+% Escape key - exists operation gracefully
 
 % Copyright 2011 Hendrik Bluhm, Vivek Venkatachalam
 % This file is part of Special Measure.
@@ -494,6 +500,12 @@ for i = 1:totpoints
                 % procedure only makes sense if the loop is not mixed
                 % with any faster loop by the global transformations.
                 % Should not be a major limitation.
+                
+                %now that first value is set, wait for time startwait if specified
+                if isfield(scandef(j),'startwait')
+                    pause(scandef(j).startwait)
+                end
+                
                 x2 = x;
                 x2(j) = scandef(j).rng(end);
                 %x2 = fliplr(x2);
@@ -602,7 +614,20 @@ for i = 1:totpoints
         end
 
         if j == scan.saveloop(1) && ~mod(count(j), scan.saveloop(2)) && nargin >= 2
-            save(filename, '-append', 'data');
+            try
+                save(filename, '-append', 'data');
+            catch
+                fprintf('**Error**, cannot save to file location - saving to backup location');
+                [backupPath backupFilename backupExt] = fileparts(filename);
+                % if the file does not exist yet, create it
+                if ~exist(['C:\' backupFilename backupExt],'file')
+                    save(['C:\' backupFilename backupExt], 'configvals', 'configdata', 'scan', 'configch', 'data')
+                else
+                    %otherwise just append the data
+                    save(['C:\' backupFilename backupExt],'-append','data');
+                end
+                fprintf(['Data saved to backup location: C:\' backupFilename backupExt]);
+            end
         end
                
         if isfield(scandef, 'postfn')
@@ -619,8 +644,18 @@ for i = 1:totpoints
     %update counters
     count(loops(1:end-1)) = 1;
     count(loops(end)) =  count(loops(end)) + 1;
-
+    
+    %% exit operation with escape key  
     if get(figurenumber, 'CurrentCharacter') == char(27)
+        %allow for some simple function call that occurs when a scan is
+        %canceled
+        set(figurenumber, 'CurrentCharacter', char(0));
+        if isfield(scan, 'escapefn')
+            for k = 1:length(scan.escapefn)
+                scan.escapefn(k).fn(scan.escapefn(k).args{:});
+            end
+        end
+        
         if isfield(scan, 'cleanupfn')
             for k = 1:length(scan.cleanupfn)
                 scan = scan.cleanupfn(k).fn(scan, scan.cleanupfn(k).args{:});
@@ -630,11 +665,11 @@ for i = 1:totpoints
         if nargin >= 2
             save(filename, 'configvals', 'configdata', 'scan', 'configch', 'data')
         end
-        set(figurenumber, 'CurrentCharacter', char(0));
+        
         set(figurenumber,'userdata',[]); % tag this figure as not being used by SM
         return;
     end
-        
+    %% Pause operation with space bar    
     if get(figurenumber, 'CurrentCharacter') == ' '
         set(figurenumber, 'CurrentCharacter', char(0));
         fprintf('Measurement paused. Type ''return'' to continue.\n')

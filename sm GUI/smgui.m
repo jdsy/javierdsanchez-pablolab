@@ -182,8 +182,19 @@ end
         'Position',[5 672 40 15]);
     smaux.smgui.numloops_eth = uicontrol('Parent',smaux.smgui.nullpanel,'Style','edit',...
         'String','1',...
-        'Position',[55 672 20 20],...
+        'Position',[48 672 15 20],...
+        'TooltipString','Number of loops',...
         'Callback',@NumLoops);
+    
+    smaux.smgui.saveloop_sth = uicontrol('Parent',smaux.smgui.nullpanel,'Style','text',...
+        'String','Save Loop:',...
+        'HorizontalAlignment','left',...
+        'Position',[75 672 60 15]);
+    smaux.smgui.saveloop_eth = uicontrol('Parent',smaux.smgui.nullpanel,'Style','edit',...
+        'String','1',...
+        'Position',[135 672 15 20],...
+        'TooltipString','Data is saved during this loop. Setting to 1 will save at each point',...
+        'Callback',@SaveLoop);
     
     smaux.smgui.commenttext_sth = uicontrol('Parent',smaux.smgui.nullpanel,'Style','text',...
         'String','Comments:',...
@@ -306,7 +317,7 @@ global smaux smscan;
         smscan.loops(i).trafofn(j)=[];
     end
     if isfield(smscan.loops(i),'setchanranges')&&(length(smscan.loops(i).setchanranges)>=j)
-        smscan.loops(i).setchanranges(j)=[];
+        smscan.loops(i).setchanranges(j)=[]; 
     end
     makelooppanels;
 end
@@ -340,7 +351,16 @@ function loopvars_eth_Callback(hObject,eventdata,i,j)
         else
             smscan.loops(i).waittime=val;
         end
-    end                
+    elseif j==4  %adjust start wait time
+        val=str2double(get(obj,'String'));
+        if (val<0)
+            errordlg('Please enter a positive number','Invalid Input Value');
+            set(obj,'String','0');
+            return;
+        else
+            smscan.loops(i).startwait=val;
+        end
+    end
 end
 
 
@@ -661,14 +681,14 @@ function Run(varargin)
                 datasaveFile = fullfile(smaux.datadir,[filestring '.mat']);
             else
                 runstring=sprintf('%03u',smaux.run);
-                datasaveFile = fullfile(smaux.datadir,[filestring '_' runstring '.mat']);
+                datasaveFile = fullfile(smaux.datadir,[runstring '_' filestring '.mat']);
             end
         else        
             if isempty(runstring)
                 datasaveFile = fullfile(smaux.datadir,[filestring '.mat']);
             else
                 runstring=sprintf('%03u',smaux.run);
-                datasaveFile = fullfile(smaux.datadir,[filestring '_' runstring '.mat']);
+                datasaveFile = fullfile(smaux.datadir,[runstring '_' filestring '.mat']);
             end
 
             if exist(datasaveFile,'file')
@@ -677,7 +697,7 @@ function Run(varargin)
                         smaux.run=smaux.run+1;
                         set(smaux.smgui.runnumber_eth,'String',smaux.run);
                         runstring=sprintf('%03u',smaux.run);
-                        datasaveFile = fullfile(smaux.datadir,[filestring '_' runstring '.mat']);
+                        datasaveFile = fullfile(smaux.datadir,[runstring '_' filestring '.mat']);
                      end
                 else
                     FileName;
@@ -686,7 +706,7 @@ function Run(varargin)
                         datasaveFile = fullfile(smaux.datadir,[filestring '.mat']);
                     else
                         runstring=sprintf('%03u',smaux.run);
-                        datasaveFile = fullfile(smaux.datadir,[filestring '_' runstring '.mat']);
+                        datasaveFile = fullfile(smaux.datadir,[runstring '_' filestring '.mat']);
                     end
                 end
             end
@@ -696,7 +716,7 @@ function Run(varargin)
       UpdateConstants;
       smrun(smscan,datasaveFile);
     if get(smaux.smgui.appendppt_cbh,'Value')
-        slide.title = [filestring '_' runstring '.mat'];
+        slide.title = [runstring '_' filestring '.mat']; %make index first
         slide.body = smscan.comments;
         slide.consts=smscan.consts;
         smsaveppt(smaux.pptsavefile,slide,'-f1000');
@@ -761,15 +781,17 @@ function Update(varargin)
             set(smaux.smgui.appendppt_cbh,'Value',1);
         end
         
-        if isfield(smaux,'datadir')
-            seplocations=findstr(filesep,smaux.datadir);
-            displaystring=smaux.datadir(seplocations(end-1)+1:end);
-            if length(displaystring)>40
-                displaystring=displaystring(end-39:end);
-            end
-            set(smaux.smgui.datapath_sth,'String',displaystring);
-            set(smaux.smgui.datapath_sth,'TooltipString',smaux.datadir);
+        %if a directory path has not been set, use current folder.
+        if ~isfield(smaux,'datadir')
+           smaux.datadir = cd; 
         end
+        seplocations=findstr(filesep,smaux.datadir);
+        displaystring=smaux.datadir(seplocations(end-1)+1:end);
+        if length(displaystring)>40
+            displaystring=displaystring(end-39:end);
+        end
+        set(smaux.smgui.datapath_sth,'String',displaystring);
+        set(smaux.smgui.datapath_sth,'TooltipString',smaux.datadir);
         
         if isfield(smaux,'run')
             set(smaux.smgui.runnumber_eth,'String',smaux.run);
@@ -782,6 +804,7 @@ function scaninit(varargin)
         global smaux smscan smdata;
         numloops = length(smscan.loops);
         set(smaux.smgui.numloops_eth,'String',numloops);
+        set(smaux.smgui.saveloop_eth,'String',smscan.saveloop);
         if isfield(smscan,'name')
             set(smaux.smgui.scantitle_eth,'String',smscan.name);
         end
@@ -857,37 +880,55 @@ function makelooppanels(varargin)
             'HorizontalAlignment','center',...
             'Position',[215 152 50 20],...
             'Callback',{@loopvars_eth_Callback,i,1});
-
+        
         %Step Time
         smaux.smgui.loopvars_sth(i,2) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
             'Style','text',...
             'String','Step time:',...
             'HorizontalAlignment','right',...
-            'Position',[355 147 55 20]);
+            'Position',[435 147 55 20]);
         smaux.smgui.loopvars_eth(i,2) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
             'Style','edit',...
             'String',smscan.loops(i).ramptime,...
+            'ToolTipString','(s) Time when ramping between each point',...
             'HorizontalAlignment','center',...
-            'Position',[415 152 55 20],...
+            'Position',[495 152 55 20],...
             'Callback',{@loopvars_eth_Callback,i,2});
 
         %Wait times            
         smaux.smgui.loopvars_sth(i,3) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
             'Style','text',...
             'String','Wait (s):',...
-            'TooltipString','Wait before getting data',...
             'HorizontalAlignment','right',...
             'Position',[555 147 55 20]);
         smaux.smgui.loopvars_eth(i,3) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
             'Style','edit',...
             'String',0,...
+            'TooltipString','(s) Wait before getting data',...
             'HorizontalAlignment','center',...
             'Position',[615 152 55 20],...
             'Callback',{@loopvars_eth_Callback,i,3});
         if isfield(smscan.loops(i),'waittime')
             set(smaux.smgui.loopvars_eth(i,3),'String',smscan.loops(i).waittime);
         end
-
+        
+        %Start wait time
+        smaux.smgui.loopvars_sth(i,4) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
+            'Style','text',...
+            'String','Start Wait:',...
+            'HorizontalAlignment','right',...
+            'Position',[335 147 55 20]);
+        smaux.smgui.loopvars_eth(i,4) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
+            'Style','edit',...
+            'String',0,...
+            'ToolTipString','After setting first value of loop, waits this amount of time (s)',...
+            'HorizontalAlignment','center',...
+            'Position',[395 152 35 20],...
+            'Callback',{@loopvars_eth_Callback,i,4});
+        if isfield(smscan.loops(i),'startwait')
+            set(smaux.smgui.loopvars_eth(i,4),'String',smscan.loops(i).startwait);
+        end
+        
 
         %Add UI controls for set channels
         for j=1:smscan.loops(i).numchans
@@ -972,7 +1013,7 @@ function makeloopchannelset(i,j)
         'Callback',{@loopcvars_eth_Callback,i,j,1});
 
     if isfield(smscan.loops(i), 'setchanranges')
-        if ~isempty(smscan.loops(i).setchanranges)  %% JDSY 06-01-2011 added check that the thing is not empty
+        if iscell(smscan.loops(i).setchanranges)
             %minimum
             smaux.smgui.loopcvars_sth(i,j,2) = uicontrol('Parent',smaux.smgui.loop_panels_ph(i),...
                 'Style','text',...
@@ -1027,7 +1068,7 @@ function makeloopchannelset(i,j)
                 'String',(smscan.loops(i).setchanranges{j}(2)-smscan.loops(i).setchanranges{j}(1))/(smscan.loops(i).npoints-1),...
                 'HorizontalAlignment','center',...
                 'Callback',{@loopcvars_eth_Callback,i,j,6});       
-
+        
             for k=2:6
                 set(smaux.smgui.loopcvars_sth(i,j,k),'Position',pos+[s*k-45+60 -5 w(k) h(k)]);
                 set(smaux.smgui.loopcvars_eth(i,j,k),'Position',pos+[s*k+60 0 w(k) h(k)]);            
@@ -1228,6 +1269,40 @@ function makeconstpanel(varargin)
             'Value',1,...
             'Callback',{@SetConsts,i});
 
+end
+
+%Set the loop where data is aved
+function SaveLoop(hObject,eventdata)
+    global smaux smdata smscan;
+    val = str2double(get(smaux.smgui.numloops_eth,'String'));
+    if (isnan(val) || mod(val,1)~=0 || val<1)
+        errordlg('Please enter a positive integer','Invalid Input Value');
+        set(smaux.smgui.numloops_eth,'String',numloops);
+        return;
+    elseif ~isstruct(smdata)
+        errordlg('Please load a rack','Illegal Action');
+        return;
+    else
+        if length(smscan.loops) > val
+            smscan.loops = smscan.loops(1:val);
+        else
+            for i=length(smscan.loops)+1:val
+                smscan.loops(i).npoints=101;
+                smscan.loops(i).rng=[0 1];
+                smscan.loops(i).getchan=[];
+                smscan.loops(i).setchan={'none'};
+                smscan.loops(i).setchanranges={[0 1]};
+                smscan.loops(i).ramptime=[];
+                smscan.loops(i).trafofn=[];
+                smscan.loops(i).trigfn=[];
+                smscan.loops(i).numchans=0;
+                smscan.loops(i).waittime=0;
+            end
+        end
+    end
+       
+    makelooppanels;
+    makeconstpanel;
 end
 
 %Change the number of loops in the scan

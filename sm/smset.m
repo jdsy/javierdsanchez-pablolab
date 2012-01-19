@@ -5,11 +5,13 @@ function smset(channels, vals, ramprate)
 % channels can be a cell or char array with channel names, or a vector
 % with channel numbers.
 % vals is a vector with one element for each channel.
-% ramprate is used instead of instrument default if given, finite,     
+% ramprate is used instead of instrument default if given, finite,  %<- diagree, if explicitly state ramprate Inf then this should ovveride   
 % and smaller than default. A negative ramprate prevents
 % waiting for ramping to finish for self ramping channels (type = 1).
 % (This faeature is mainly used by smrun).
 
+%% JDSY - change such that infinite ramprate forces to behave like step
+%% channel
 global smdata;
 
 if isempty(channels) 
@@ -45,9 +47,17 @@ if nargin >= 3 %&& ~isempty(ramprate)
         ramprate = ramprate * ones(nchan, 1);
     end
 
+    %if ramprate is specified and finite, take slower of channel specified
+    %vs smset arg specified
     mask = isfinite(ramprate);
     if any(mask)
         rangeramp(mask, 3) = min(ramprate(mask), rangeramp(mask, 3));
+    end
+    
+    %If ramprate is specified as infinite, then treat as step channel
+    infIndex = ~isfinite(ramprate);
+    if any(infIndex)
+        rangeramp(infIndex, 3) = ramprate(infIndex);
     end
 end
 
@@ -76,6 +86,11 @@ end
     
 setchan = find(~isfinite(rangeramp(:, 3)));
 
+%Do setchannels first
+for k = setchan'    
+    smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 1], vals2(k));
+end
+
 % get current val for step channels
 for k = stepchan'
     curr(k)= smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 0]);
@@ -86,9 +101,7 @@ for k = rampchan'
     ramptime(k) = smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 1], vals2(k), rangeramp(k, 3));
 end
 
-for k = setchan'    
-    smdata.inst(instchan(k, 1)).cntrlfn([instchan(k, :), 1], vals2(k));
-end
+
 
 tramp = now;
 
