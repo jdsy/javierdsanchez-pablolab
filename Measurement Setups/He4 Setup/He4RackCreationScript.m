@@ -128,6 +128,25 @@ smdata.inst(i).name = 'K2400T';
 %channel list
 smdata.inst(i).channels = strvcat('T');
 
+%K2400 DIL in temperature sensing mode
+i=i+1
+%%%data
+smdata.inst(i).data.inst = []; %load gpib instrument here
+%%datadim
+smdata.inst(i).datadim = [0]';
+%%Control function
+smdata.inst(i).cntrlfn = @smcK2400
+%%dimension of channels
+smdata.inst(i).type = [0]';
+%name of the device type
+smdata.inst(i).device = 'K2400';
+%name of the specific device
+smdata.inst(i).name = 'K2400TDIL';
+%channel list
+smdata.inst(i).channels = strvcat('Vdil','Idil');
+
+
+
 %Magnet Controller
 i=i+1
 %%%data
@@ -181,6 +200,8 @@ smaddchannel('test',2,'Iithaco',[-Inf Inf Inf 1]);
 smaddchannel('DecaDAC','CHAN A0','DacV',[-10 10 1 1]);
 smaddchannel('test',1,'dummy',[0 Inf Inf 1]);
 smaddchannel('K2400T','T','T',[-Inf Inf Inf 1]);
+smaddchannel('K2400TDIL','Vdil','Vdil',[-Inf Inf Inf 1]);
+smaddchannel('K2400TDIL','Idil','Idil',[-Inf Inf Inf 1]);
 smaddchannel('test',3,'I_bias',[0 0 0 1]);
 smaddchannel('MagnetController','B','B',[-0.2000 0.2000 0.0184 1]); %range ramp values here are very important!  
 smaddchannel('UpperLockin','X','LockinUpperX',[-Inf Inf Inf 1]);

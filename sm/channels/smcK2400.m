@@ -50,6 +50,10 @@ function val = smcK2400(ic, val, rate)
                 fprintf(smdata.inst(ic(1)).data.inst, sprintf('%s %f', cmd, val));
             else
                 error('K2400 driver: VRAMP channel is write-only');
+%             end
+%                 
+        otherwise
+            error('K2400 driver: Nonvalid Channel specified');
             end
                 
         otherwise
