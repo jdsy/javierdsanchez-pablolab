@@ -702,7 +702,12 @@ for i = 1:totpoints
         evalin('base', 'keyboard');                
     end
 end
-
+if isfield(scan, 'escapefn')
+    for k = 1:length(scan.escapefn)
+        scan.escapefn(k).fn(scan.escapefn(k).args{:});
+    end
+end
+        
 if isfield(scan, 'cleanupfn')
     for k = 1:length(scan.cleanupfn)
         scan = scan.cleanupfn(k).fn(scan, scan.cleanupfn(k).args{:});
