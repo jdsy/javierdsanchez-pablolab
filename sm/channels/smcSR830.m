@@ -9,6 +9,7 @@ function [val, rate] = smcSR830(ic, val, rate, ctrl)
 % 18: time constant
 % 19: sync filter on/off
 
+
 global smdata;
 
 cmds = {'OUTP 1', 'OUTP 2', 'OUTP 3', 'OUTP 4', 'FREQ', 'SLVL', ...
@@ -79,7 +80,12 @@ switch ic(2) % Channel
                 elseif ic(2)==18
                     val = SR830tauindex(val);
                 end
-                fprintf(smdata.inst(ic(1)).data.inst, sprintf('%s %f', cmds{ic(2)}, val));
+                % for Aux outputs have to put a comma
+                if any(ic(2)==[11 12 13 14])
+                    fprintf(smdata.inst(ic(1)).data.inst, sprintf('%s, %f', cmds{ic(2)}, val));
+                else
+                    fprintf(smdata.inst(ic(1)).data.inst, sprintf('%s %f', cmds{ic(2)}, val));
+                end
             case 0 % get
                 val = query(smdata.inst(ic(1)).data.inst, sprintf('%s? %s',...
                     cmds{ic(2)}(1:4), cmds{ic(2)}(5:end)), '%s\n', '%f');
