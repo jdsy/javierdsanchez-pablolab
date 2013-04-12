@@ -24,6 +24,7 @@ lockins=[];
 dmms=[];
 for i=1:size(ic,1)
     ind=ic(i,1);
+    % Look through current instruments
     switch smdata.inst(ind).device
         case 'SR830'
             lockins=[lockins ind];
