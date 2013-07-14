@@ -1,0 +1,13 @@
+Folder Structure Rules
+
+smdata_He4 
+ -> this is supposed to be the general rack file for the He4 which should be the basis of your own rack.  In normal use you should not modify this file unless you are trying to improve it for all.  Personal customizations should be kept in a subfolder in this directory 
+
+
+He4 Specific Matlab -> contains m-files specific to the He4 setup such as the temperature calibration and T senor files.
+
+
+DO NOT DO THE FOLLOWING
+1) change _anything_ in sm or sm GUI unless you know what you are doing
+2) change things WITHOUT using tortoiseHG!!  This way atleast we can roll back changes if they mess everything up!
+3) Make multiple copies of the code and mess around with them and try to circumvent tortoiseHg.
