@@ -8,6 +8,7 @@ function val = smcK2400(ic, val, rate)
 
     %Driver for Keithley 2400
     %Last update: Hadar 10-13-2010
+    %Error Fixed: LeoZ 8-8-2012
 
     global smdata;
     %strchan = smdata.inst(ic(1)).channels(ic(2),:);
@@ -44,20 +45,20 @@ function val = smcK2400(ic, val, rate)
             otherwise
                 error('K2400 driver: Operation not supported');
             end
-        case 3 %VRAMP
-            if ic(3)=1 %Ramp is only a write channel
+        case 3 %VRAMP (does this channel exist?)
+            if ic(3)==1 %Ramp is only a write channel
                 %val,%rate
                 fprintf(smdata.inst(ic(1)).data.inst, sprintf('%s %f', cmd, val));
             else
                 error('K2400 driver: VRAMP channel is write-only');
-%             end
+            end
 %                 
         otherwise
             error('K2400 driver: Nonvalid Channel specified');
-            end
-                
-        otherwise
-            error('K2400 driver: Nonvalid Channel specified');
     end
+
+%         otherwise
+%             error('K2400 driver: Nonvalid Channel specified');
+%     end
 end
 
