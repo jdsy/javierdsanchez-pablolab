@@ -47,7 +47,11 @@ if ~isempty(constructor)
             constructor.args = varargin;
         end
         
-        inst.data.inst = constructor.fn(adaptor{:}, constructor.args{:});
+        if ~strcmp(adaptor, 'serial') % accommodate the fact that serial() does not need vendor info
+            inst.data.inst = constructor.fn(adaptor{:}, constructor.args{:});
+        else
+            inst.data.inst = constructor.fn(constructor.args{:});
+        end
         set(inst.data.inst, constructor.params, constructor.vals) ;
     end
 end
