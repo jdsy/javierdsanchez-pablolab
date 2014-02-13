@@ -23,6 +23,10 @@ function val = smcDecaDAC4(ic, val, rate)
 %now i switch to Chan A1 and cannot write or read.   when i read it thinks
 %it is at the correct value, but is not ouputing correct voltage on
 %voltmeter.
+%% 2013-07-29 - ran into problems with running DAC step at max speed
+% issue seems to be with communication speed with DAC.
+% one clear solution is to just restart the connection (smclose and then
+% smopen) everytime the DAC has a timeout error.  started working on this.
 global smdata;
 
 
@@ -116,14 +120,33 @@ function resetRamp(inst,slot,chan)
 end
 
 function dacwrite(inst, str)
-try
-    query(inst, str);
-catch
-    fprintf('WARNING: error in DAC (%s) communication. Flushing buffer.\n',inst.Port);
+% try
+    pause(3e-3);
+    %flush buffer if necessary
     while inst.BytesAvailable > 0
-        fprintf(fscanf(inst));pause(0.3)
+%         fprintf('DAC - extra bytes during set- flushing\n');
+%      	fscanf(inst)
+%         pause(0.3);
+        fprintf('DAC - has unused bytes during set!  Resetting connection\n');
+        smclose(5);
+        smopen(5);
+        pause(0.3);
     end
-end
+%     lastwarn('');
+    query(inst, str);
+%     if ~isempty(lastwarn)
+%         fprintf('we have a warning!') 
+%         
+%         smclose(ic(1));
+%         smopen(ic(1));
+%     end
+% catch
+%     fprintf('WARNING: error in DAC (%s) communication. Flushing buffer.\n',inst.Port);
+% %     while inst.BytesAvailable > 0
+% %         fprintf(fscanf(inst))
+% %         pause(0.3)
+% %     end
+% end
 end
 
 function val = dacread(inst, str, format)
@@ -131,22 +154,36 @@ if nargin < 3
     format = '%s';
 end
 
+while inst.BytesAvailable > 0
+%         fprintf('DAC - extra bytes during set- flushing\n');
+%      	fscanf(inst)
+%         pause(0.3);
+    fprintf('DAC - has unused bytes during read!  Resetting connection\n');
+    smclose(5);
+    smopen(5);
+    pause(0.3);
+end
+
 i = 1;
 while i < 10
-    try
+     try
         %Flush buffer if necessary before reading.  Otherwise we will read
         %an outdated response.
-        while inst.BytesAvailable > 0
-            fscanf(inst);pause(0.3)
-        end
+        pause(3e-3);
+%         while inst.BytesAvailable > 0
+%             fprintf('DAC - extra bytes during read- flushing\n');
+%             fscanf(inst)
+%             pause(0.3);
+%         end
         
         val = query(inst, str, '%s\n', format);
+        
         i = 10;
     catch
         fprintf('WARNING: error in DAC (%s) communication. Flushing buffer and repeating.\n',inst.Port);
-        while inst.BytesAvailable > 0
-            fscanf(inst)
-        end
+%         while inst.BytesAvailable > 0
+%             fscanf(inst)
+%         end
 
         i = i+1;
         if i == 10
