@@ -830,8 +830,9 @@ function makelooppanels(varargin)
     global smaux smscan smdata;
     numloops = length(smscan.loops);
     
-    panel1position = [180 600 700 190];
+     panel1position = [180 600 700 190];
 
+    
     for i=1:length(smaux.smgui.loop_panels_ph)
         delete(smaux.smgui.loop_panels_ph(i));
     end
